@@ -1,9 +1,9 @@
 package rs.raf;
 
-import rs.raf.calculator.Calculator;
-import rs.raf.calculator.Scanner;
-import rs.raf.calculator.Token;
-import rs.raf.calculator.TokenType;
+import rs.raf.calculator.*;
+import rs.raf.calculator.ast.ASTPrettyPrinter;
+import rs.raf.calculator.ast.Location;
+import rs.raf.calculator.ast.StatementList;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -60,25 +60,34 @@ public class Main {
         List<Token> tokens = scanner.scanTokens();
 
         if (hadError) return;
-        System.out.println(tokens);
+        for (Token token : tokens) {
+            System.out.println(token);
+        }
+
+        Parser parser = new Parser(tokens);
+        StatementList statementList = parser.parse();
+
+        if (hadError) return;
+        var pp = new ASTPrettyPrinter(System.out);
+        statementList.prettyPrint(pp);
     }
 
-    public static void error(int line, String message) {
-        report(line, "", message);
+    public static void error(Location location, String message) {
+        report(location, "", message);
     }
 
-    private static void report(int line, String where,
+    private static void report(Location location, String where,
                                String message) {
         System.err.println(
-                "[line " + line + "] Error" + where + ": " + message);
+                "[location " + location + "] Error" + where + ": " + message);
         hadError = true;
     }
 
-    static void error(Token token, String message) {
+    public static void error(Token token, String message) {
         if (token.getType() == TokenType.EOF) {
-            report(token.getLine(), " at end", message);
+            report(token.getLocation(), " at end", message);
         } else {
-            report(token.getLine(), " at '" + token.getLexeme() + "'", message);
+            report(token.getLocation(), " at '" + token.getLexeme() + "'", message);
         }
     }
 }
